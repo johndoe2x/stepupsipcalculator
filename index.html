@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Step-Up SIP Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.8s ease forwards;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800 font-sans transition-colors duration-300">
+  <div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-3xl font-bold text-center mb-6">📈 Step-Up SIP Calculator</h1>
+
+    <!-- Input Form -->
+    <div class="bg-white p-6 rounded-2xl shadow-md mb-6 sticky top-0 z-10">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="block font-medium">Monthly SIP (₹)</label>
+          <input type="number" id="sip" value="15000" class="w-full p-2 border rounded bg-gray-50" />
+        </div>
+        <div>
+          <label class="block font-medium">Step-Up % (per year)</label>
+          <input type="number" id="stepUp" value="5" class="w-full p-2 border rounded bg-gray-50" />
+        </div>
+        <div>
+          <label class="block font-medium">Expected Return % (annual)</label>
+          <input type="number" id="returnRate" value="12" class="w-full p-2 border rounded bg-gray-50" />
+        </div>
+        <div>
+          <label class="block font-medium">Duration (Years)</label>
+          <input type="number" id="years" value="10" class="w-full p-2 border rounded bg-gray-50" />
+        </div>
+        <div>
+          <label class="block font-medium">Lump Sum in Year 1 (₹)</label>
+          <input type="number" id="lumpSum" value="0" class="w-full p-2 border rounded bg-gray-50" />
+        </div>
+      </div>
+      <div class="mt-4 flex gap-2">
+        <button onclick="calculateStepUpSIP()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">Calculate</button>
+        <button onclick="resetForm()" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded shadow">Reset</button>
+        <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow">Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Result Summary -->
+    <div id="result" class="hidden bg-white p-6 rounded-2xl shadow-md">
+      <h2 class="text-xl font-semibold mb-4">🧾 Summary</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-lg mb-6">
+        <div class="bg-blue-50 p-4 rounded shadow">
+          <p>Total SIP Invested: <span class="font-bold text-blue-700" id="totalInvested">₹0</span></p>
+        </div>
+        <div class="bg-yellow-50 p-4 rounded shadow">
+          <p>Total Lump Sum Invested: <span class="font-bold text-yellow-700" id="lumpSumValue">₹0</span></p>
+        </div>
+        <div class="bg-green-50 p-4 rounded shadow">
+          <p>Total Portfolio Value: <span class="font-bold text-green-700" id="finalValue">₹0</span></p>
+        </div>
+      </div>
+
+      <h2 class="text-lg font-semibold mb-2">📅 Year-by-Year Details</h2>
+      <div class="overflow-x-auto mb-6">
+        <table class="w-full text-sm text-left border rounded shadow">
+          <thead class="bg-gray-200">
+            <tr>
+              <th class="px-4 py-2">Year</th>
+              <th class="px-4 py-2">SIP/month (₹)</th>
+              <th class="px-4 py-2">SIP Invested (₹)</th>
+              <th class="px-4 py-2">SIP Value (₹)</th>
+              <th class="px-4 py-2">Lump Sum Value (₹)</th>
+              <th class="px-4 py-2">Total Portfolio Value (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="yearlyBreakdown"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer class="text-center text-sm text-gray-600 mt-12 border-t pt-6">
+  <a href="about.html" class="mx-2 underline" target="_blank" rel="noopener noreferrer">About Us</a>
+  <a href="contact.html" class="mx-2 underline" target="_blank" rel="noopener noreferrer">Contact Us</a>
+  <a href="privacy.html" class="mx-2 underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+  <a href="disclaimer.html" class="mx-2 underline" target="_blank" rel="noopener noreferrer">Disclaimer</a>
+</footer>
+  </div>
+
+  <script>
+    function resetForm() {
+      document.getElementById("sip").value = 15000;
+      document.getElementById("stepUp").value = 5;
+      document.getElementById("returnRate").value = 12;
+      document.getElementById("years").value = 10;
+      document.getElementById("lumpSum").value = 0;
+      document.getElementById("result").classList.add("hidden");
+      document.getElementById("yearlyBreakdown").innerHTML = "";
+    }
+
+    function exportCSV() {
+      const rows = document.querySelectorAll("#yearlyBreakdown tr");
+      let csvContent = "Year,SIP/month,SIP Invested,SIP Value,Lump Sum Value,Total Portfolio Value\n";
+      rows.forEach(row => {
+        const cols = row.querySelectorAll("td");
+        const rowData = Array.from(cols).map(td => td.textContent.replace(/₹|,/g, "").trim()).join(",");
+        csvContent += rowData + "\n";
+      });
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "sip_summary.csv";
+      link.click();
+    }
+  function formatINR(value) {
+  return Math.round(value).toLocaleString('en-IN');
+}
+
+function animateNumber(id, endValue) {
+  let element = document.getElementById(id);
+  let start = 0;
+  const duration = 1000;
+  const steps = 20;
+  const increment = endValue / steps;
+  const stepTime = duration / steps;
+  const interval = setInterval(() => {
+    start += increment;
+    element.textContent = '₹' + Math.round(start).toLocaleString('en-IN');
+    if (start >= endValue) {
+      element.textContent = '₹' + Math.round(endValue).toLocaleString('en-IN');
+      clearInterval(interval);
+    }
+  }, stepTime);
+}
+
+function calculateStepUpSIP() {
+  const sip = parseFloat(document.getElementById("sip").value);
+  const stepUp = parseFloat(document.getElementById("stepUp").value) / 100;
+  const returnRate = parseFloat(document.getElementById("returnRate").value) / 100;
+  const years = parseInt(document.getElementById("years").value);
+  const lumpSum = parseFloat(document.getElementById("lumpSum").value);
+
+  let totalInvested = 0;
+  let totalFutureValue = 0;
+  let currentSIP = sip;
+
+  const yearlyLumpSumValues = [];
+  for (let i = 0; i < years; i++) {
+    yearlyLumpSumValues.push(lumpSum * Math.pow(1 + returnRate, i + 1));
+  }
+
+  let breakdownHTML = "";
+  for (let i = 1; i <= years; i++) {
+    let yearInvested = 0;
+    let yearFutureValue = 0;
+
+    for (let j = 1; j <= 12; j++) {
+      yearInvested += currentSIP;
+      totalInvested += currentSIP;
+      const monthsRemaining = (years - i) * 12 + (12 - j);
+      const fv = currentSIP * Math.pow(1 + returnRate / 12, monthsRemaining);
+      yearFutureValue += fv;
+      totalFutureValue += fv;
+    }
+
+    const lumpValue = yearlyLumpSumValues[i - 1];
+    const yearTotal = yearFutureValue + lumpValue;
+
+    breakdownHTML += `
+      <tr class="border-t animate-fadeIn">
+        <td class="px-4 py-2">Year ${i}</td>
+        <td class="px-4 py-2">₹${formatINR(currentSIP)}</td>
+        <td class="px-4 py-2">₹${formatINR(yearInvested)}</td>
+        <td class="px-4 py-2">₹${formatINR(yearFutureValue)}</td>
+        <td class="px-4 py-2">₹${formatINR(lumpValue)}</td>
+        <td class="px-4 py-2">₹${formatINR(yearTotal)}</td>
+      </tr>`;
+
+    currentSIP *= 1 + stepUp;
+  }
+
+  const lumpSumFutureValue = lumpSum * Math.pow(1 + returnRate, years);
+  const totalValue = totalFutureValue + lumpSumFutureValue;
+
+  document.getElementById("result").classList.remove("hidden");
+  animateNumber("totalInvested", totalInvested);
+  animateNumber("lumpSumValue", lumpSum);
+  animateNumber("finalValue", totalValue);
+  document.getElementById("yearlyBreakdown").innerHTML = breakdownHTML;
+}
+</script>
+</body>
+</html>
